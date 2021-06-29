@@ -30,9 +30,11 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
+        //$request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        return view('google2fa.index');
+
+        //return redirect()->intended(RouteServiceProvider::HOME);
     }
 
     /**
@@ -50,5 +52,20 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    public function verifysecret(Request $request){
+        $user = Auth::user();
+        $google2fa = app('pragmarx.google2fa');
+
+        $secret = $request->one_time_password;
+        $valid = $google2fa->verifyKey($user->secret, $secret);
+
+        if($valid){
+            $request->session()->regenerate();
+            return redirect()->intended(RouteServiceProvider::HOME);
+        }else{
+            return redirect('google2fa.index')->withErrors(['status','Invalid verification Code,Please try again.']);
+        }
     }
 }

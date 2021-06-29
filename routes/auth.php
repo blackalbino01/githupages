@@ -10,19 +10,32 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
+
 Route::get('/register', [RegisteredUserController::class, 'create'])
                 ->middleware('guest')
                 ->name('register');
 
-Route::post('/register', [RegisteredUserController::class, 'store'])
-                ->middleware('guest');
+
+Route::post('/pre-register', [RegisteredUserController::class, 'preRegister'])
+                ->middleware('guest')
+                ->name('preRegister');
+
+
+Route::get('/post-register', [RegisteredUserController::class, 'store'])
+                ->middleware('guest')
+                ->name('postRegister');
 
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])
                 ->middleware('guest')
                 ->name('login');
 
+Route::post('/2fa-verify', [AuthenticatedSessionController::class, 'verifysecret'])
+                ->middleware('2fa')
+                ->name('verify2fa');
+
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-                ->middleware('guest');
+                ->middleware('guest')
+                ->name('postLogin');
 
 Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])
                 ->middleware('guest')

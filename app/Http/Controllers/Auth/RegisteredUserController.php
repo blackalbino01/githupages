@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
-
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
@@ -33,22 +32,39 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
+        
+        $request->merge(session('user'));
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'secret' => $request->secret,
+        ]);
+
+        event(new Registered($user));
+
+        //Auth::login($user);
+
+        return redirect(RouteServiceProvider::LOGIN);
+    }
+
+    public function preRegister(Request $request){
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        $google2fa = app('pragmarx.google2fa');
 
-        event(new Registered($user));
+        $user = array_merge(['secret' => $google2fa->generateSecretKey()],$request->all());
 
-        Auth::login($user);
+        $request->session()->flash('user', $user);
 
-        return redirect(RouteServiceProvider::HOME);
+        $QR_Image = $google2fa->getQRCodeInline( config('app.name'),$user['email'], $user['secret']);
+
+        return view('google2fa.register', ['QR_Image' => $QR_Image, 'secret' => $user['secret']]);
+        
     }
 }
